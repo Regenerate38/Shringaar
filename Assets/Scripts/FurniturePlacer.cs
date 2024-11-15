@@ -5,6 +5,9 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARCore;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.UI;
+using System.Collections;
+using UnityEngine.Networking;
+using System;
 
 public class PlacementManager : MonoBehaviour
 {
@@ -21,14 +24,27 @@ public class PlacementManager : MonoBehaviour
     private Vector3 demoPose;
     public ArSession session;
 
+    public string uploadURL = "https://d474-27-34-49-81.ngrok-free.app/api/image/upload";
+    public Image uiImage; // Assign your UI Image component here
+
+
+
     private List<GameObject> placedFurniture = new List<GameObject>(); // placed furniture list for managing selection
 
     void Start()
     {
+
         raycastManager = FindObjectOfType<ARRaycastManager>();
 
         pointerObj = this.transform.GetChild(0).gameObject;
         pointerObj.SetActive(false);
+        UploadImage(); 
+    }
+    public void UploadImage()
+    {
+        byte[] imageBytes = GetImageBytes();
+        Debug.Log("Image chha ki chaina"+imageBytes.ToString());
+        StartCoroutine(Upload(imageBytes));
     }
 
     void Update()
@@ -167,7 +183,57 @@ public class PlacementManager : MonoBehaviour
             Debug.LogError("Furniture prefab is not assigned!");
         }
     }
+    private IEnumerator Upload(byte[] imageData)
+    {
+        List<IMultipartFormSection> formData = new List<IMultipartFormSection>
+        {
+            new MultipartFormFileSection("file", imageData, "uploaded_image.png", "image/*") // Adjust MIME type if necessary
+        };
+        Debug.Log("Mime ready");
 
+        using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, formData))
+        {
+            yield return www.SendWebRequest();
 
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("Error during upload: " + www.error);
+            }
+            else
+            {
+                Debug.Log("Upload complete: " + www.downloadHandler.text);
+            }
+        }
+        Debug.Log("Sent");
+    }
+    private byte[] GetImageBytes()
+    {
 
+        Debug.Log("Mula");
+        Sprite sprite = uiImage.sprite;
+        Debug.Log("UiImage chha yaar" + uiImage);
+        Debug.Log("Sprite chha yaar" + uiImage.sprite);
+        if (sprite == null)
+        {
+            Debug.LogError("No sprite assigned to UI Image.");
+            return null;
+        }
+
+        // Create a new Texture2D with the same dimensions as the sprite
+        Texture2D texture = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
+        Debug.Log("Texture first" + texture);
+        
+        // Set pixels from the sprite's texture
+        texture.SetPixels(sprite.texture.GetPixels(
+            (int)sprite.textureRect.x,
+            (int)sprite.textureRect.y,
+            (int)sprite.textureRect.width,
+            (int)sprite.textureRect.height));
+
+        Debug.Log("Texture second" + texture);
+
+        texture.Apply(); // Apply changes to the texture
+
+        return ImageConversion.EncodeToPNG(texture);  // Convert to PNG format
+    }
 }
