@@ -24,8 +24,8 @@ public class PlacementManager : MonoBehaviour
     private Vector3 demoPose;
     public ArSession session;
 
-    public string uploadURL = "https://d474-27-34-49-81.ngrok-free.app/api/image/upload";
-    public Image uiImage; // Assign your UI Image component here
+    string uploadURL = "http://192.168.43.140:4000/api/image/upload";
+    public UnityEngine.UI.Image uiImage; // Assign your UI Image component here
 
 
 
@@ -45,6 +45,7 @@ public class PlacementManager : MonoBehaviour
         byte[] imageBytes = GetImageBytes();
         Debug.Log("Image chha ki chaina"+imageBytes.ToString());
         StartCoroutine(Upload(imageBytes));
+       // StartCoroutine(GetRequest("http://192.168.43.140:4000/api/image"));
     }
 
     void Update()
@@ -183,29 +184,7 @@ public class PlacementManager : MonoBehaviour
             Debug.LogError("Furniture prefab is not assigned!");
         }
     }
-    private IEnumerator Upload(byte[] imageData)
-    {
-        List<IMultipartFormSection> formData = new List<IMultipartFormSection>
-        {
-            new MultipartFormFileSection("file", imageData, "uploaded_image.png", "image/*") // Adjust MIME type if necessary
-        };
-        Debug.Log("Mime ready");
 
-        using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, formData))
-        {
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError("Error during upload: " + www.error);
-            }
-            else
-            {
-                Debug.Log("Upload complete: " + www.downloadHandler.text);
-            }
-        }
-        Debug.Log("Sent");
-    }
     private byte[] GetImageBytes()
     {
 
@@ -236,4 +215,62 @@ public class PlacementManager : MonoBehaviour
 
         return ImageConversion.EncodeToPNG(texture);  // Convert to PNG format
     }
+
+    IEnumerator GetRequest(string uri)
+    {
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+        {
+            // Request and wait for the desired page.
+            yield return webRequest.SendWebRequest();
+
+            string[] pages = uri.Split('/');
+            int page = pages.Length - 1;
+
+            switch (webRequest.result)
+            {
+                case UnityWebRequest.Result.ConnectionError:
+                case UnityWebRequest.Result.DataProcessingError:
+                    Debug.LogError(pages[page] + ": Error: " + webRequest.error);
+                    break;
+                case UnityWebRequest.Result.ProtocolError:
+                    Debug.LogError(pages[page] + ": HTTP Error: " + webRequest.error);
+                    break;
+                case UnityWebRequest.Result.Success:
+                    Debug.Log(pages[page] + ":\nReceived: " + webRequest.downloadHandler.text);
+                    break;
+            }
+        }
+    }
+
+
+    private IEnumerator Upload(byte[] imageData)
+    {
+        Debug.Log(uploadURL);
+        
+          WWWForm form = new WWWForm();
+        // Log image data length for debugging
+        Debug.Log($"Image data length: {imageData.Length}");
+
+
+        form.AddBinaryData("file", imageData, "image.png", "image/*");
+   
+        // Create the UnityWebRequest for POST
+        // using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
+        using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
+        {
+            // Send the request and wait for a response
+            yield return www.SendWebRequest();
+
+            // Check for errors
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Error uploading image: {www.error}");
+            }
+            else
+            {
+                Debug.Log("Image upload complete!");
+            }
+        }
+    }
+
 }
