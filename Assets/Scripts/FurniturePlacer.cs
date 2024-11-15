@@ -89,6 +89,7 @@ public class PlacementManager : MonoBehaviour
                 Debug.Log("Raycast Hit: " + raycastHit.collider.name);
                 if (!isOverUI && raycastHit.collider.CompareTag("Furniture"))
                 {
+                    Debug.Log("Object Selected");
                     HighlightObject(raycastHit.collider.gameObject);
                 }
             }
