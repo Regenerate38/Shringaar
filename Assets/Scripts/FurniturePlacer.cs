@@ -268,7 +268,7 @@ public class PlacementManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("Image upload complete!");
+                Debug.Log("Image upload complete!" + www.downloadHandler.text);
             }
         }
     }
