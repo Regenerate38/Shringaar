@@ -5,17 +5,36 @@ using UnityEngine.XR.ARFoundation;
 
 public class WholeRoomPlacer : MonoBehaviour
 {
-    
-//    public ARRaycastManager raycastManager;
+    public GameObject objectPrefab;
+    Vector3[] closeOffsets = new Vector3[]
+    {
+    new Vector3(0, 0, 0),   
+    new Vector3(0, 0.5f, 0), 
+    new Vector3(0, -0.5f, 0), 
+    //new Vector3(0.5f, 0, 0),
+    //new Vector3(-0.5f, 0, 0) 
+    };
+    //    public ARRaycastManager raycastManager;
+    private Camera arCamera;
 
     void Start()
     {
-//        raycastManager = FindObjectOfType<ARRaycastManager>();
+            arCamera = Camera.main; // Get reference to the main camera
+        PlaceObject();
+        //        raycastManager = FindObjectOfType<ARRaycastManager>();
 
     }
 
-    void Update()
+    void PlaceObject()
     {
-        
+        foreach (var positionOffset in closeOffsets)
+        {
+            
+            Vector3 spawnPosition = arCamera.transform.position + arCamera.transform.TransformDirection(positionOffset);
+            Quaternion spawnRotation = arCamera.transform.rotation;
+
+            Instantiate(objectPrefab, spawnPosition, spawnRotation);
+        }
+           
     }
 }
