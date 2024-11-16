@@ -8,10 +8,11 @@ public class FirstScene : MonoBehaviour
     {
         SceneManager.LoadScene("SampleScene");
     }
-  /*  public void Scene2()
+    public void Scene2()
     {
-        SceneManager.LoadScene("Scene2");
+        SceneManager.LoadScene("MeasureScene");
     }
+/*
     public void Scene3()
     {
         SceneManager.LoadScene("Scene3");
