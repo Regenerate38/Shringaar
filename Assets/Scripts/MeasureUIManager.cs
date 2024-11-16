@@ -1,5 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,82 +7,155 @@ using UnityEngine.XR.ARFoundation;
 
 public class MeasureUIManager : MonoBehaviour
 {
-    [SerializeField] Sprite stopSprite, playSprite;
+    [SerializeField] Sprite stopSprite;
     [SerializeField] XROrigin xROrigin;
+    [SerializeField] GameObject lineArea;
+    LineRenderer lineRenderer;
+    List<TextMeshPro> textMeshPros = new();
+    List<GameObject> spawnedPlacementPointers = new();
     ARPlaneManager aRPlaneManager;
-    Sprite startSprite, pauseSprite;
-    Button startStopButton, playPauseButton, retryButton;
-    bool started, playing;
+    PlacementPointerManager placementPointerManager;
+    Sprite startSprite;
+    Button startStopButton, deleteButton, retryButton;
+    List<LineRenderer> lineRenderers = new();
+    List<List<TextMeshPro>> textMeshProsLists = new();
+    List<List<GameObject>> spawnedPlacementPointersLists = new();
+    enum ScanState
+    {
+        None,
+        ScanningRoom,
+        StoppedRoom,
+        ScanningPlace
+    }
+    ScanState currentState = ScanState.None;
     void Start()
     {
         Button[] childrenButtons = GetComponentsInChildren<Button>();
 
-        startStopButton = childrenButtons[0];
-        playPauseButton = childrenButtons[1];
-        retryButton = childrenButtons[2];
+        startStopButton = childrenButtons[1];
+        deleteButton = childrenButtons[2];
+        retryButton = childrenButtons[3];
 
         startSprite = startStopButton.image.sprite;
-        pauseSprite = playPauseButton.image.sprite;
 
         startStopButton.onClick.AddListener(HandleStartStop);
-        playPauseButton.onClick.AddListener(HandlePlayPauseScan);
+        deleteButton.onClick.AddListener(HandleDelete);
         retryButton.onClick.AddListener(HandleRetry);
 
-        playPauseButton.gameObject.SetActive(false);
+        deleteButton.gameObject.SetActive(false);
         retryButton.gameObject.SetActive(false);
 
         aRPlaneManager = xROrigin.GetComponent<ARPlaneManager>();
         aRPlaneManager.enabled = false;
+
+        lineRenderer = lineArea.GetComponent<LineRenderer>();
+
+        placementPointerManager = xROrigin.GetComponent<PlacementPointerManager>();
+        if (placementPointerManager != null) { Debug.Log("Found The Pointer."); }
     }
 
     void HandleStartStop()
     {
-        if (!started)
+        switch (currentState)
         {
-            started = true;
-            playing = true;
-            aRPlaneManager.enabled = true;
-            startStopButton.image.sprite = stopSprite;
-            playPauseButton.gameObject.SetActive(true);
-            retryButton.gameObject.SetActive(true);
-            return;
+            case ScanState.None:
+                // Start scanning the room
+                aRPlaneManager.enabled = true;
+                startStopButton.image.sprite = stopSprite;
+                deleteButton.gameObject.SetActive(true);
+                retryButton.gameObject.SetActive(true);
+                currentState = ScanState.ScanningRoom;
+                return;
+
+            case ScanState.ScanningRoom:
+                // Stop scanning the room
+                startStopButton.image.sprite = startSprite;
+                deleteButton.gameObject.SetActive(false);
+                retryButton.gameObject.SetActive(false);
+                currentState = ScanState.ScanningPlace;
+                return;
+
+            // case ScanState.StoppedRoom:
+            //     // Start scanning the place
+            //     startStopButton.image.sprite = stopSprite;
+            //     deleteButton.gameObject.SetActive(true);
+            //     retryButton.gameObject.SetActive(true);
+            //     currentState = ScanState.ScanningPlace;
+            //     InstantiateNewLineRenderer();
+            //     return;
+
+            case ScanState.ScanningPlace:
+                // Stop scanning the place
+                aRPlaneManager.enabled = false;
+                startStopButton.image.sprite = startSprite;
+                deleteButton.gameObject.SetActive(false);
+                retryButton.gameObject.SetActive(false);
+                currentState = ScanState.None;
+                for (int i = 0; i < lineRenderers.Count; i++)
+                {
+                    LineRenderer lineRenderer = lineRenderers[i];
+                    List<TextMeshPro> textMeshPros = textMeshProsLists[i];
+
+                    // Get the number of points in the LineRenderer
+                    int pointCount = lineRenderer.positionCount;
+                    Vector3[] positions = new Vector3[pointCount];
+                    lineRenderer.GetPositions(positions);
+
+                    for (int j = 0; j < pointCount - 1; j++)
+                    {
+                        // Ensure textMeshPros has the expected number of elements
+                        if (j < textMeshPros.Count)
+                        {
+                            Debug.Log($"(Point {j} vector: {positions[j]}, Point {j + 1} vector: {positions[j + 1]}, Text: {textMeshPros[j].text})");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"TextMeshPro element missing for Point {j} in LineRenderer {i}");
+                        }
+                    }
+                }
+                return;
         }
-        started = false;
-        playing = false;
-        aRPlaneManager.enabled = false;
-        startStopButton.image.sprite = startSprite;
-        playPauseButton.image.sprite = pauseSprite;
-        playPauseButton.gameObject.SetActive(false);
-        retryButton.gameObject.SetActive(false);
     }
 
-    void HandlePlayPauseScan()
+    void InstantiateNewLineRenderer()
     {
-        if (!started) return;
-        if (!playing)
+        lineRenderers.Add(placementPointerManager.lineRenderer);
+        textMeshProsLists.Add(placementPointerManager.textMeshPros);
+        spawnedPlacementPointersLists.Add(placementPointerManager.spawnedPlacementPointers);
+        placementPointerManager.lineRenderer = lineRenderer;
+        placementPointerManager.textMeshPros = textMeshPros;
+        placementPointerManager.spawnedPlacementPointers = spawnedPlacementPointers;
+        lineRenderers.Add(lineRenderer);
+        textMeshProsLists.Add(textMeshPros);
+        spawnedPlacementPointersLists.Add(spawnedPlacementPointers);
+    }
+
+    void HandleDelete()
+    {
+        int pointCount = placementPointerManager.lineRenderer.positionCount;
+        if (pointCount == 0 && lineRenderers.Count > 1)
         {
-            playing = true;
-            aRPlaneManager.enabled = true;
-            playPauseButton.image.sprite = pauseSprite;
-            return;
+            placementPointerManager.lineRenderer = lineRenderers[0];
+            placementPointerManager.textMeshPros = textMeshProsLists[0];
+            placementPointerManager.spawnedPlacementPointers = spawnedPlacementPointersLists[0];
+            lineRenderers.RemoveAt(1);
+            textMeshProsLists.RemoveAt(1);
+            spawnedPlacementPointersLists.RemoveAt(1);
         }
-        playing = false;
-        aRPlaneManager.enabled = false;
-        playPauseButton.image.sprite = playSprite;
+        if (pointCount < 1) return;
+        pointCount--;
+        placementPointerManager.lineRenderer.positionCount -= 1;
+        Destroy(placementPointerManager.spawnedPlacementPointers[pointCount]);
+        placementPointerManager.spawnedPlacementPointers.RemoveAt(pointCount);
+        if (pointCount == 0) return;
+        pointCount--;
+        Destroy(placementPointerManager.textMeshPros[pointCount]);
+        placementPointerManager.textMeshPros.RemoveAt(pointCount);
     }
 
     void HandleRetry()
     {
-        if (!started) return;
-        started = false;
-        playing = false;
-        foreach (ARPlane plane in aRPlaneManager.trackables)
-            plane.gameObject.SetActive(false);
-
-        aRPlaneManager.enabled = false;
-        startStopButton.image.sprite = startSprite;
-        playPauseButton.image.sprite = pauseSprite;
-        playPauseButton.gameObject.SetActive(false);
-        retryButton.gameObject.SetActive(false);
+        InstantiateNewLineRenderer();
     }
 }

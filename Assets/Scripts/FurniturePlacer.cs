@@ -13,7 +13,7 @@ public class PlacementManager : MonoBehaviour
 {
     public ARRaycastManager raycastManager;
     public GameObject pointerObj;
-    public GameObject furniturePrefab; 
+    public GameObject furniturePrefab;
     private float speedModifier = 0.0005f;
     private Vector3 translationVector;
     private GameObject activeObject;
@@ -39,14 +39,14 @@ public class PlacementManager : MonoBehaviour
 
         pointerObj = this.transform.GetChild(0).gameObject;
         pointerObj.SetActive(false);
-        UploadImage(); 
+        UploadImage();
     }
     public void UploadImage()
     {
         byte[] imageBytes = GetImageBytes();
-        Debug.Log("Image chha ki chaina"+imageBytes.ToString());
+        Debug.Log("Image chha ki chaina" + imageBytes.ToString());
         StartCoroutine(Upload(imageBytes));
-       // StartCoroutine(GetRequest("http://192.168.43.140:4000/api/image"));
+        // StartCoroutine(GetRequest("http://192.168.43.140:4000/api/image"));
     }
 
     void Update()
@@ -202,7 +202,7 @@ public class PlacementManager : MonoBehaviour
         // Create a new Texture2D with the same dimensions as the sprite
         Texture2D texture = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
         Debug.Log("Texture first" + texture);
-        
+
         // Set pixels from the sprite's texture
         texture.SetPixels(sprite.texture.GetPixels(
             (int)sprite.textureRect.x,
@@ -247,14 +247,14 @@ public class PlacementManager : MonoBehaviour
     private IEnumerator Upload(byte[] imageData)
     {
         Debug.Log(uploadURL);
-        
-          WWWForm form = new WWWForm();
+
+        WWWForm form = new WWWForm();
         // Log image data length for debugging
         Debug.Log($"Image data length: {imageData.Length}");
 
 
         form.AddBinaryData("file", imageData, "image.png", "image/*");
-   
+
         // Create the UnityWebRequest for POST
         // using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
         using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
