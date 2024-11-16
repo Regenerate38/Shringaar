@@ -18,7 +18,7 @@ public class PlacementManager : MonoBehaviour
 {
     public ARRaycastManager raycastManager;
     public GameObject pointerObj;
-    public GameObject furniturePrefab; 
+    public GameObject furniturePrefab;
     private float speedModifier = 0.0005f;
     private Vector3 translationVector;
     private GameObject activeObject;
@@ -29,6 +29,7 @@ public class PlacementManager : MonoBehaviour
     private Vector3 demoPose;
     public ArSession session;
     public GameObject preferencesPanel;
+
     public TMP_Dropdown roomType;
     public TMP_Dropdown style;
     public GameObject instructionPanel;
@@ -115,6 +116,7 @@ public class PlacementManager : MonoBehaviour
         pointerObj.SetActive(false);
         UploadImage();
 
+
         roomType.onValueChanged.AddListener(delegate {
             roomTypeValueChanged(roomType);
         });        
@@ -122,6 +124,7 @@ public class PlacementManager : MonoBehaviour
         style.onValueChanged.AddListener(delegate {
             styleValueChanged(style);
         });
+
 
 
     }
@@ -145,7 +148,9 @@ public class PlacementManager : MonoBehaviour
     public void UploadImage()
     {
 
+
        // StartCoroutine(GetRequest("http://192.168.43.140:4000/api/image"));
+
     }
 
     void Update()
@@ -285,7 +290,39 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
-   
+    /*
+    private byte[] GetImageBytes()
+    {
+
+        Debug.Log("Mula");
+        Sprite sprite = uiImage.sprite;
+        Debug.Log("UiImage chha yaar" + uiImage);
+        Debug.Log("Sprite chha yaar" + uiImage.sprite);
+        if (sprite == null)
+        {
+            Debug.LogError("No sprite assigned to UI Image.");
+            return null;
+        }
+
+        // Create a new Texture2D with the same dimensions as the sprite
+        Texture2D texture = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
+        Debug.Log("Texture first" + texture);
+
+        // Set pixels from the sprite's texture
+        texture.SetPixels(sprite.texture.GetPixels(
+            (int)sprite.textureRect.x,
+            (int)sprite.textureRect.y,
+            (int)sprite.textureRect.width,
+            (int)sprite.textureRect.height));
+
+        Debug.Log("Texture second" + texture);
+
+        texture.Apply(); // Apply changes to the texture
+
+        return ImageConversion.EncodeToPNG(texture);  // Convert to PNG format
+    }
+    */
+
     IEnumerator GetRequest(string uri)
     {
         using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
@@ -319,7 +356,6 @@ public class PlacementManager : MonoBehaviour
         Debug.Log("Image" + imageData);
         Debug.Log("Dropdown 1" + roomtypetext);
         Debug.Log("Dropdown 2" + styletext);
-
 
         WWWForm form = new WWWForm();
         // Log image data length for debugging
