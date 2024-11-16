@@ -23,6 +23,7 @@ public class PlacementManager : MonoBehaviour
     private bool isNearObject = false;
     private Vector3 demoPose;
     public ArSession session;
+    public GameObject preferencesPanel;
 
     string uploadURL = "http://192.168.43.140:4000/api/image/upload";
     public UnityEngine.UI.Image uiImage; // Assign your UI Image component here
@@ -271,6 +272,11 @@ public class PlacementManager : MonoBehaviour
                 Debug.Log("Image upload complete!" + www.downloadHandler.text);
             }
         }
+    }
+
+    public void GetRecommendations()
+    {
+        preferencesPanel.SetActive(false);
     }
 
 }
