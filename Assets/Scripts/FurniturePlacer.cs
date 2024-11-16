@@ -28,8 +28,6 @@ public class PlacementManager : MonoBehaviour
     string uploadURL = "http://192.168.43.140:4000/api/image/upload";
     public UnityEngine.UI.Image uiImage; // Assign your UI Image component here
 
-
-
     private List<GameObject> placedFurniture = new List<GameObject>(); // placed furniture list for managing selection
 
     void Start()

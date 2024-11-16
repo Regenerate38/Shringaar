@@ -24,8 +24,7 @@ public class MeasureUIManager : MonoBehaviour
     {
         None,
         ScanningRoom,
-        StoppedRoom,
-        ScanningPlace
+        ScanningPlace,
     }
     ScanState currentState = ScanState.None;
     void Start()
@@ -46,12 +45,18 @@ public class MeasureUIManager : MonoBehaviour
         retryButton.gameObject.SetActive(false);
 
         aRPlaneManager = xROrigin.GetComponent<ARPlaneManager>();
-        aRPlaneManager.enabled = false;
-
-        lineRenderer = lineArea.GetComponent<LineRenderer>();
+        aRPlaneManager.enabled = true;
 
         placementPointerManager = xROrigin.GetComponent<PlacementPointerManager>();
-        if (placementPointerManager != null) { Debug.Log("Found The Pointer."); }
+
+        lineRenderer = lineArea.AddComponent<LineRenderer>();
+
+        lineRenderer.material = placementPointerManager.material;
+        lineRenderer.positionCount = 0;
+        lineRenderer.startColor = Color.white;
+        lineRenderer.endColor = Color.white;
+        lineRenderer.startWidth = 0.002f;
+        lineRenderer.endWidth = 0.002f;
     }
 
     void HandleStartStop()
@@ -68,29 +73,17 @@ public class MeasureUIManager : MonoBehaviour
                 return;
 
             case ScanState.ScanningRoom:
-                // Stop scanning the room
-                startStopButton.image.sprite = startSprite;
-                deleteButton.gameObject.SetActive(false);
-                retryButton.gameObject.SetActive(false);
                 currentState = ScanState.ScanningPlace;
+                InstantiateNewLineRenderer();
                 return;
 
-            // case ScanState.StoppedRoom:
-            //     // Start scanning the place
-            //     startStopButton.image.sprite = stopSprite;
-            //     deleteButton.gameObject.SetActive(true);
-            //     retryButton.gameObject.SetActive(true);
-            //     currentState = ScanState.ScanningPlace;
-            //     InstantiateNewLineRenderer();
-            //     return;
-
             case ScanState.ScanningPlace:
-                // Stop scanning the place
-                aRPlaneManager.enabled = false;
                 startStopButton.image.sprite = startSprite;
                 deleteButton.gameObject.SetActive(false);
                 retryButton.gameObject.SetActive(false);
-                currentState = ScanState.None;
+                aRPlaneManager.enabled = false;
+                startStopButton.gameObject.SetActive(false);
+
                 for (int i = 0; i < lineRenderers.Count; i++)
                 {
                     LineRenderer lineRenderer = lineRenderers[i];
@@ -115,6 +108,7 @@ public class MeasureUIManager : MonoBehaviour
                     }
                 }
                 return;
+
         }
     }
 
@@ -156,6 +150,6 @@ public class MeasureUIManager : MonoBehaviour
 
     void HandleRetry()
     {
-        InstantiateNewLineRenderer();
+        // InstantiateNewLineRenderer();
     }
 }

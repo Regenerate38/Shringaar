@@ -8,6 +8,7 @@ using TMPro;
 
 public class PlacementPointerManager : MonoBehaviour
 {
+    public Material material;
     public List<TextMeshPro> textMeshPros = new();
     public List<GameObject> spawnedPlacementPointers = new();
     public LineRenderer lineRenderer;
@@ -20,8 +21,6 @@ public class PlacementPointerManager : MonoBehaviour
     List<ARRaycastHit> hits = new();
     void Awake()
     {
-        lineRenderer = lineRoom.GetComponent<LineRenderer>();
-
         aRRaycastManager = GetComponent<ARRaycastManager>();
         controls = new TouchControls();
         controls.Control.Touch.performed += ctx =>
@@ -29,7 +28,18 @@ public class PlacementPointerManager : MonoBehaviour
             if (ctx.control.device is not Pointer device) return;
             OnPress(device.position.ReadValue());
         };
+    }
 
+    void Start()
+    {
+        lineRenderer = lineRoom.AddComponent<LineRenderer>();
+
+        lineRenderer.material = material;
+        lineRenderer.positionCount = 0;
+        lineRenderer.startColor = Color.white;
+        lineRenderer.endColor = Color.white;
+        lineRenderer.startWidth = 0.002f;
+        lineRenderer.endWidth = 0.002f;
     }
     void OnEnable() { controls.Control.Enable(); }
     void OnDisable() { controls.Control.Disable(); }
