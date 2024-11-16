@@ -5,6 +5,9 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARCore;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.UI;
+using System.Collections;
+using UnityEngine.Networking;
+using System;
 
 public class PlacementManager : MonoBehaviour
 {
@@ -20,15 +23,30 @@ public class PlacementManager : MonoBehaviour
     private bool isNearObject = false;
     private Vector3 demoPose;
     public ArSession session;
+    public GameObject preferencesPanel;
+
+    string uploadURL = "http://192.168.43.140:4000/api/image/upload";
+    public UnityEngine.UI.Image uiImage; // Assign your UI Image component here
+
+
 
     private List<GameObject> placedFurniture = new List<GameObject>(); // placed furniture list for managing selection
 
     void Start()
     {
+
         raycastManager = FindObjectOfType<ARRaycastManager>();
 
         pointerObj = this.transform.GetChild(0).gameObject;
         pointerObj.SetActive(false);
+        UploadImage(); 
+    }
+    public void UploadImage()
+    {
+        byte[] imageBytes = GetImageBytes();
+        Debug.Log("Image chha ki chaina"+imageBytes.ToString());
+        StartCoroutine(Upload(imageBytes));
+       // StartCoroutine(GetRequest("http://192.168.43.140:4000/api/image"));
     }
 
     void Update()
@@ -168,6 +186,97 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
+    private byte[] GetImageBytes()
+    {
 
+        Debug.Log("Mula");
+        Sprite sprite = uiImage.sprite;
+        Debug.Log("UiImage chha yaar" + uiImage);
+        Debug.Log("Sprite chha yaar" + uiImage.sprite);
+        if (sprite == null)
+        {
+            Debug.LogError("No sprite assigned to UI Image.");
+            return null;
+        }
+
+        // Create a new Texture2D with the same dimensions as the sprite
+        Texture2D texture = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
+        Debug.Log("Texture first" + texture);
+        
+        // Set pixels from the sprite's texture
+        texture.SetPixels(sprite.texture.GetPixels(
+            (int)sprite.textureRect.x,
+            (int)sprite.textureRect.y,
+            (int)sprite.textureRect.width,
+            (int)sprite.textureRect.height));
+
+        Debug.Log("Texture second" + texture);
+
+        texture.Apply(); // Apply changes to the texture
+
+        return ImageConversion.EncodeToPNG(texture);  // Convert to PNG format
+    }
+
+    IEnumerator GetRequest(string uri)
+    {
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+        {
+            // Request and wait for the desired page.
+            yield return webRequest.SendWebRequest();
+
+            string[] pages = uri.Split('/');
+            int page = pages.Length - 1;
+
+            switch (webRequest.result)
+            {
+                case UnityWebRequest.Result.ConnectionError:
+                case UnityWebRequest.Result.DataProcessingError:
+                    Debug.LogError(pages[page] + ": Error: " + webRequest.error);
+                    break;
+                case UnityWebRequest.Result.ProtocolError:
+                    Debug.LogError(pages[page] + ": HTTP Error: " + webRequest.error);
+                    break;
+                case UnityWebRequest.Result.Success:
+                    Debug.Log(pages[page] + ":\nReceived: " + webRequest.downloadHandler.text);
+                    break;
+            }
+        }
+    }
+
+
+    private IEnumerator Upload(byte[] imageData)
+    {
+        Debug.Log(uploadURL);
+        
+          WWWForm form = new WWWForm();
+        // Log image data length for debugging
+        Debug.Log($"Image data length: {imageData.Length}");
+
+
+        form.AddBinaryData("file", imageData, "image.png", "image/*");
+   
+        // Create the UnityWebRequest for POST
+        // using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
+        using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
+        {
+            // Send the request and wait for a response
+            yield return www.SendWebRequest();
+
+            // Check for errors
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Error uploading image: {www.error}");
+            }
+            else
+            {
+                Debug.Log("Image upload complete!" + www.downloadHandler.text);
+            }
+        }
+    }
+
+    public void GetRecommendations()
+    {
+        preferencesPanel.SetActive(false);
+    }
 
 }

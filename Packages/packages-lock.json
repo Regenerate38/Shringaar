@@ -274,6 +274,15 @@
       },
       "url": "https://packages.unity.com"
     },
+    "nl.jeffreylanters.web-requests": {
+      "version": "https://github.com/jeffreylanters/unity-web-requests.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.modules.unitywebrequest": ""
+      },
+      "hash": "62b9b9cad98b7b3241837ccfe2a3757239c5ef56"
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,
