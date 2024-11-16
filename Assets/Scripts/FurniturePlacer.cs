@@ -8,6 +8,11 @@ using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.Networking;
 using System;
+using UnityEngine.UIElements;
+using TMPro;
+using Newtonsoft.Json.Linq;
+using Unity.VisualScripting;
+
 
 public class PlacementManager : MonoBehaviour
 {
@@ -24,28 +29,122 @@ public class PlacementManager : MonoBehaviour
     private Vector3 demoPose;
     public ArSession session;
     public GameObject preferencesPanel;
-
-    string uploadURL = "http://192.168.43.140:4000/api/image/upload";
-    public UnityEngine.UI.Image uiImage; // Assign your UI Image component here
-
-
-
+    public TMP_Dropdown roomType;
+    public TMP_Dropdown style;
+    public GameObject instructionPanel;
+    string uploadURL = "http://172.18.161.14:4000/api/image/upload";
+    string baseURL = "http://172.18.161.14:4000/";
+    public UnityEngine.UI.Image uploadImage; // Assign your UI Image component here
+    public GameObject loadingPanel; 
+    public UnityEngine.UI.Slider loadingSlider;
+    public GameObject scrollView;
+    String roomtypetext;
+    String styletext;
+    public UnityEngine.UI.Image targetImage;
+    byte[] imageBytes;
+    private ARCameraManager arCameraManager;
+    private RawImage displayImage;
+    string filepath;
     private List<GameObject> placedFurniture = new List<GameObject>(); // placed furniture list for managing selection
+    public GameObject buttonParent;
+    GameObject[] canvasElements;
+
+    [System.Serializable]
+    public class UploadedFiles
+    {
+        public string filename;
+        public string filepath;
+    }
+
+    [System.Serializable]
+    public class ResponseData
+    {
+        public UploadedFiles uploaded_files;
+        public bool success;
+    }
+    
+    [System.Serializable]
+    public class InputData
+    {
+        public string style;
+        public string room_type; // Note: Use snake_case to match your JSON structure
+        public string room_image_path;
+
+    }
+
+    [System.Serializable]
+    public class UploadData
+    {
+        public InputData input;
+        public string room_image_path;
+
+        public UploadData(InputData input, string room_image_path)
+        {
+            this.input = input;
+            this.room_image_path = room_image_path;
+        }
+    }
+    [System.Serializable]
+    public class ScoresResponse
+    {
+       public string furniture_path;
+        public float score;
+    };
+
+    [System.Serializable]
+    public class PredictionResponse {
+        public ScoresResponse[] response;
+        public bool success;
+    }
+
+    PredictionResponse predictionResponse;
 
     void Start()
     {
+        scrollView.SetActive(true);
+
+        instructionPanel.SetActive(true);
+        if (arCameraManager == null)
+        {
+            arCameraManager = GetComponent<ARCameraManager>();
+        }
 
         raycastManager = FindObjectOfType<ARRaycastManager>();
 
         pointerObj = this.transform.GetChild(0).gameObject;
         pointerObj.SetActive(false);
-        UploadImage(); 
+        UploadImage();
+
+        roomType.onValueChanged.AddListener(delegate {
+            roomTypeValueChanged(roomType);
+        });        
+        
+        style.onValueChanged.AddListener(delegate {
+            styleValueChanged(style);
+        });
+
+
     }
+
+    private void roomTypeValueChanged(TMP_Dropdown roomType)
+    {
+        int index = roomType.value;
+
+        // Get the text of the selected option
+        roomtypetext = roomType.options[index].text;
+    }
+
+        private void styleValueChanged(TMP_Dropdown style)
+    {
+        int index = style.value;
+
+        // Get the text of the selected option
+        styletext = style.options[index].text;
+    }
+
     public void UploadImage()
     {
-        byte[] imageBytes = GetImageBytes();
-        Debug.Log("Image chha ki chaina"+imageBytes.ToString());
-        StartCoroutine(Upload(imageBytes));
+
        // StartCoroutine(GetRequest("http://192.168.43.140:4000/api/image"));
     }
 
@@ -186,37 +285,7 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
-    private byte[] GetImageBytes()
-    {
-
-        Debug.Log("Mula");
-        Sprite sprite = uiImage.sprite;
-        Debug.Log("UiImage chha yaar" + uiImage);
-        Debug.Log("Sprite chha yaar" + uiImage.sprite);
-        if (sprite == null)
-        {
-            Debug.LogError("No sprite assigned to UI Image.");
-            return null;
-        }
-
-        // Create a new Texture2D with the same dimensions as the sprite
-        Texture2D texture = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
-        Debug.Log("Texture first" + texture);
-        
-        // Set pixels from the sprite's texture
-        texture.SetPixels(sprite.texture.GetPixels(
-            (int)sprite.textureRect.x,
-            (int)sprite.textureRect.y,
-            (int)sprite.textureRect.width,
-            (int)sprite.textureRect.height));
-
-        Debug.Log("Texture second" + texture);
-
-        texture.Apply(); // Apply changes to the texture
-
-        return ImageConversion.EncodeToPNG(texture);  // Convert to PNG format
-    }
-
+   
     IEnumerator GetRequest(string uri)
     {
         using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
@@ -247,14 +316,18 @@ public class PlacementManager : MonoBehaviour
     private IEnumerator Upload(byte[] imageData)
     {
         Debug.Log(uploadURL);
-        
-          WWWForm form = new WWWForm();
+        Debug.Log("Image" + imageData);
+        Debug.Log("Dropdown 1" + roomtypetext);
+        Debug.Log("Dropdown 2" + styletext);
+
+
+        WWWForm form = new WWWForm();
         // Log image data length for debugging
         Debug.Log($"Image data length: {imageData.Length}");
 
 
         form.AddBinaryData("file", imageData, "image.png", "image/*");
-   
+
         // Create the UnityWebRequest for POST
         // using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
         using (UnityWebRequest www = UnityWebRequest.Post(uploadURL, form))
@@ -270,13 +343,176 @@ public class PlacementManager : MonoBehaviour
             else
             {
                 Debug.Log("Image upload complete!" + www.downloadHandler.text);
+                string responseText = www.downloadHandler.text;
+                ResponseData responseData = JsonUtility.FromJson<ResponseData>(responseText);
+                filepath = responseData.uploaded_files.filepath;
+                Debug.Log("Filepath: " + filepath);
+
             }
         }
+
+        // Example data to upload
+
+
+           
+        // Create the input data
+        InputData inputData = new() { style = "modern",
+        room_type = "living",
+        room_image_path = "/home/sujanbaskota/Desktop/python/decorators/decorators_server/" + filepath
+    };
+        inputData.style = "modern";
+        inputData.room_type= "living";
+        inputData.room_image_path = "/home/sujanbaskota/Desktop/python/decorators/decorators_server/" + filepath;
+        // UploadData uploadData = new UploadData(inputData, roomImagePath);
+
+        // Serialize to JSON
+        string jsonData = JsonUtility.ToJson(inputData);
+         Debug.Log("json " + jsonData);
+
+         // Activate the scroll view (if needed)
+
+
+        form = new WWWForm();
+        form.AddField("style", "modern");
+        form.AddField("roomType", "bedroom");
+        form.AddField("roomImagePath", "/home/sujanbaskota/Desktop/python/decorators/decorators_server/"+ filepath);
+        
+
+        //var jsonData = "{{ \"input\": { \"style\": \"modern\",\"room_type\":\"living\"},\"room_image_path\": \"/home/sujanbaskota/Desktop/python/decorators/decorators_server/uploads/Empty-Room-Decluttering-R.jpg\"}";
+        // Create a UnityWebRequest for sending JSON data
+        using (UnityWebRequest www = UnityWebRequest.Post($"{baseURL}api/predict/now", jsonData, "application/json"))
+        {
+
+            // Set the content type to application/json
+
+            // Send the request and wait for a response
+            yield return www.SendWebRequest();
+
+            // Check for errors
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("Error: "+ www.error);
+            }
+            else
+            {
+                Debug.Log("Success.");
+                string responseText = www.downloadHandler.text;
+                predictionResponse = JsonUtility.FromJson<PredictionResponse>(responseText);
+                foreach (ScoresResponse scoreResponse in predictionResponse.response)
+                {
+                    Debug.Log("SR_Furniture Path:" + scoreResponse.furniture_path);
+                    Debug.Log("SR_Score:" + scoreResponse.score);
+                }
+            }
+                    EnableButtons();
+
+        }
     }
+
+
 
     public void GetRecommendations()
     {
         preferencesPanel.SetActive(false);
+        Debug.Log("Image chha ki chaina" + imageBytes.ToString());
+        StartCoroutine(Upload(imageBytes));
+
+    }
+
+    public void CaptureImage()
+    {
+        instructionPanel.SetActive(false);
+        Camera camera = Camera.main;
+        int width = Screen.width / 2; 
+        int height = Screen.height / 2;
+
+        RenderTexture rt = new(width, height, 24);
+        camera.targetTexture = rt;
+
+        RenderTexture currentRT = RenderTexture.active;
+        RenderTexture.active = rt;
+
+        camera.Render();
+
+        Texture2D image = new(width, height, TextureFormat.RGB24, false);
+        image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        image.Apply();
+
+        targetImage.sprite = Sprite.Create(image, new Rect(0, 0, image.width, image.height), Vector2.zero);
+
+
+        camera.targetTexture = null;
+        RenderTexture.active = currentRT;
+        byte[] imageBytes = image.EncodeToPNG();
+
+        Destroy(rt);
+    preferencesPanel.SetActive(true);
+
+    }
+
+    public void PickImage()
+    {
+        NativeGallery.Permission permission = NativeGallery.CheckPermission(NativeGallery.PermissionType.Read, NativeGallery.MediaType.Image);
+        if (permission == NativeGallery.Permission.Granted)
+        {
+            OpenGallery();
+        }
+        else if (permission == NativeGallery.Permission.ShouldAsk)
+        {
+            // Request permission
+            NativeGallery.RequestPermissionAsync((result) =>
+            {
+                if (result == NativeGallery.Permission.Granted)
+                {
+                    OpenGallery();
+                }
+            }, NativeGallery.PermissionType.Read, NativeGallery.MediaType.Image);
+        }
+    }
+
+    private void OpenGallery()
+    {
+        NativeGallery.GetImageFromGallery((path) =>
+        {
+            if (path != null)
+            {
+                imageBytes = NativeGallery.LoadImageAtPath(path, -1, false).EncodeToPNG();
+                Texture2D texture = NativeGallery.LoadImageAtPath(path);
+
+                if (texture != null)
+                {
+                    targetImage.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
+                }
+            }
+            else
+            {
+                Debug.Log("No image selected");
+            }
+        }, "Select an image", "image/*");
+    }
+
+    private void EnableButtons()
+    {
+        canvasElements = buttonParent.GetComponentsInChildren<GameObject>(true);
+
+        Debug.Log("Canvas Elements" + canvasElements);
+        foreach (var item in canvasElements)
+        {
+            foreach (ScoresResponse scoreResponse in predictionResponse.response)
+            {
+                if (item.name+".png" == scoreResponse.furniture_path.ToString())
+                {
+                    Debug.Log(item + " match " + scoreResponse.furniture_path.ToString());
+                    item.SetActive(true);
+                }
+                else
+                {
+                    item.SetActive(false);
+
+                }
+            }
+        }
+
     }
 
 }

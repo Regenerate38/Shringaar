@@ -17,9 +17,9 @@ public class AccelerometerMovement : MonoBehaviour
         Vector3 acceleration = Input.acceleration;
         float accelerationZ = acceleration.z;
 
-        Debug.Log("Speed Acceleration Z " + acceleration.z);
-        Debug.Log("Speed Acceleration X " + acceleration.x);
-        Debug.Log("Speed Acceleration Y " + acceleration.y);
+        //Debug.Log("Speed Acceleration Z " + acceleration.z);
+        //Debug.Log("Speed Acceleration X " + acceleration.x);
+        //Debug.Log("Speed Acceleration Y " + acceleration.y);
         // Integrate smoothed acceleration to get velocity
         velocityZ += accelerationZ * deltaTime;
 
