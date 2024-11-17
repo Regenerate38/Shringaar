@@ -5,6 +5,7 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.InputSystem;
 using TMPro;
+using UnityEngine.UI;
 
 public class PlacementPointerManager : MonoBehaviour
 {
@@ -19,6 +20,7 @@ public class PlacementPointerManager : MonoBehaviour
     TouchControls controls;
     ARRaycastManager aRRaycastManager;
     List<ARRaycastHit> hits = new();
+
     void Awake()
     {
         aRRaycastManager = GetComponent<ARRaycastManager>();
@@ -33,7 +35,6 @@ public class PlacementPointerManager : MonoBehaviour
     void Start()
     {
         lineRenderer = lineRoom.AddComponent<LineRenderer>();
-
         lineRenderer.material = material;
         lineRenderer.positionCount = 0;
         lineRenderer.startColor = Color.white;
@@ -83,4 +84,6 @@ public class PlacementPointerManager : MonoBehaviour
         distanceText.transform.position = hitPosition + directionVector * 0.5f + upwardVector * 0.025f;
         textMeshPros.Add(distanceText);
     }
+
+
 }

@@ -1,9 +1,12 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
+using static PlacementManager;
 
 public class MeasureUIManager : MonoBehaviour
 {
@@ -20,6 +23,10 @@ public class MeasureUIManager : MonoBehaviour
     List<LineRenderer> lineRenderers = new();
     List<List<TextMeshPro>> textMeshProsLists = new();
     List<List<GameObject>> spawnedPlacementPointersLists = new();
+
+    byte[] imageBytes;
+    Image targetImage;
+
     enum ScanState
     {
         None,
@@ -84,29 +91,7 @@ public class MeasureUIManager : MonoBehaviour
                 aRPlaneManager.enabled = false;
                 startStopButton.gameObject.SetActive(false);
 
-                for (int i = 0; i < lineRenderers.Count; i++)
-                {
-                    LineRenderer lineRenderer = lineRenderers[i];
-                    List<TextMeshPro> textMeshPros = textMeshProsLists[i];
-
-                    // Get the number of points in the LineRenderer
-                    int pointCount = lineRenderer.positionCount;
-                    Vector3[] positions = new Vector3[pointCount];
-                    lineRenderer.GetPositions(positions);
-
-                    for (int j = 0; j < pointCount - 1; j++)
-                    {
-                        // Ensure textMeshPros has the expected number of elements
-                        if (j < textMeshPros.Count)
-                        {
-                            Debug.Log($"(Point {j} vector: {positions[j]}, Point {j + 1} vector: {positions[j + 1]}, Text: {textMeshPros[j].text})");
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"TextMeshPro element missing for Point {j} in LineRenderer {i}");
-                        }
-                    }
-                }
+                OpenGallery();
                 return;
 
         }
@@ -148,7 +133,96 @@ public class MeasureUIManager : MonoBehaviour
         placementPointerManager.textMeshPros.RemoveAt(pointCount);
     }
 
-    void HandleRetry()
+    public void PickImage()
+    {
+        NativeGallery.Permission permission = NativeGallery.CheckPermission(NativeGallery.PermissionType.Read, NativeGallery.MediaType.Image);
+        if (permission == NativeGallery.Permission.Granted)
+        {
+            OpenGallery();
+        }
+        else if (permission == NativeGallery.Permission.ShouldAsk)
+        {
+            // Request permission
+            NativeGallery.RequestPermissionAsync((result) =>
+            {
+                if (result == NativeGallery.Permission.Granted)
+                {
+                    OpenGallery();
+                }
+            }, NativeGallery.PermissionType.Read, NativeGallery.MediaType.Image);
+        }
+    }
+
+    private void OpenGallery()
+    {
+        NativeGallery.GetImageFromGallery((path) =>
+        {
+            if (path != null)
+            {
+                imageBytes = NativeGallery.LoadImageAtPath(path, -1, false).EncodeToPNG();
+                Texture2D texture = NativeGallery.LoadImageAtPath(path);
+
+                StartCoroutine(Upload(imageBytes));
+            }
+            else
+            {
+                Debug.Log("No image selected");
+            }
+        }, "Select an image", "image/*");
+    }
+
+    public class Furniture
+    {
+        public string furniture_name;
+        public float x, y, orientation;
+    }
+    public class PostResponse
+    {
+        public Furniture[] data;
+    }
+    public class PostBody
+    {
+        public string url;
+        public float[][] room_coord;
+    };
+
+    private IEnumerator Upload(byte[] imageData)
+    {
+        int pointCount = lineRenderers[0].positionCount;
+
+        float[][] pointsArray = new float[pointCount][];
+        Vector3[] positions = new Vector3[pointCount];
+
+        for (int i = 0; i < pointCount; i++) 
+            pointsArray[i] = new float[2] { positions[i].x, positions[i].y };
+
+        Debug.Log("Logging.");
+        Debug.Log("Length: "+ pointsArray.Length);
+        PostBody postBody = new() { url = "https://live.staticflickr.com/6110/6362536639_67c180b7f5_b.jpg", room_coord = pointsArray };
+        using (UnityWebRequest www = UnityWebRequest.Post("http://192.168.81.102:3000/api/place", JsonUtility.ToJson(postBody), "application/json"))
+        {
+            // Send the request and wait for a response
+            yield return www.SendWebRequest();
+                
+            // Check for errors
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Error uploading image: {www.error}");
+            }
+            else
+            {
+                Debug.Log("Image upload complete!" + www.downloadHandler.text);
+                string responseText = www.downloadHandler.text;
+                PostResponse postResponse = JsonUtility.FromJson<PostResponse>(responseText);
+                foreach(var furniture in postResponse.data ) { Debug.Log(furniture.furniture_name); }
+                //filepath = responseData.uploaded_files.filepath;
+                //Debug.Log("Filepath: " + filepath);
+
+            }
+        }
+    }
+
+        void HandleRetry()
     {
         // InstantiateNewLineRenderer();
     }
