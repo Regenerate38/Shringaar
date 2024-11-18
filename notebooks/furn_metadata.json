@@ -1,0 +1,100 @@
+{
+    "brown_sofa": {
+        "height": "40in",
+        "width": "32in",
+        "depth": "23in",
+        "style": ["wingback"],
+        "room_type": ["bedroom"]
+    },
+    "yellow_armchair": {
+        "height": "32in",
+        "width": "30in",
+        "depth": "23in",
+        "style": ["modern", "minimalist"],
+        "room_type": ["bedroom", "living"]
+    },
+    "white_armchair": {
+        "height": "34in",
+        "width": "30in",
+        "depth": "23in",
+        "style": [ "minimalist"],
+        "room_type": ["living", "study"]
+    },
+    "red_sofa": {
+        "height": "40in",
+        "width": "68in",
+        "depth": "24in",
+        "style": ["contemporary"],
+        "room_type": ["living"]
+    },
+    "green_sofa": {
+        "height": "35in",
+        "width": "68in",
+        "depth": "24in",
+        "style": ["contemporary", "minimalist"],
+        "room_type": ["living"]
+    },
+    "light_gray_sofa": {
+        "height": "35in",
+        "width": "40in",
+        "depth": "24in",
+        "style": ["modern", "minimalist"],
+        "room_type": ["living", "bedroom"]
+    },
+    "leather_vintage_sofa": {
+        "height": "32in",
+        "width": "68in",
+        "depth": "22in",
+        "style": ["modern", "vintage"],
+        "room_type": ["living"]
+    },
+    "red_brown_sofa": {
+        "height": "32in",
+        "width": "66in",
+        "depth": "22in",
+        "style": ["modern", "vintage"],
+        "room_type": ["living"]
+    },
+    "wooden_beige_sofa": {
+        "height": "35in",
+        "width": "44in",
+        "depth": "24in",
+        "style": ["contemporary", "minimalist"],
+        "room_type": ["living"]
+    },
+    "modern_chair": {
+        "height": "30in",
+        "width": "20in",
+        "depth": "20in",
+        "style": [ "minimalist"],
+        "room_type": ["living", "bedroom", "office", "study"]
+    },
+    "antique_desk": {
+        "height": "30in",
+        "width": "46in",
+        "depth": "25in",
+        "style": ["antique", "vintage", "traditional"],
+        "room_type": ["bedroom", "office", "study"]
+    },
+    "coffee_table": {
+        "height": "17in",
+        "width": "20in",
+        "depth": "20in",
+        "style": ["modern", "contemporary"],
+        "room_type": ["living", "office"]
+    },
+    "hexagonal_top_table": {
+        "height": "18in",
+        "width": "22in",
+        "depth": "20in",
+        "style": ["classic", "traditional", "geometric"],
+        "room_type": ["living", "study"]
+    },
+    "curved_side_coffee_table": {
+        "height": "17in",
+        "width": "46in",
+        "depth": "23in",
+        "style": ["modern", "minimalist"],
+        "room_type": ["living", "office"]
+    }
+}
